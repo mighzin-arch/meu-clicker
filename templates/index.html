@@ -38,6 +38,10 @@
         font-size: 1.2rem;
         box-shadow: 3px 3px 6px #aaaaaa;
       }
+
+      * {
+    touch-action: manipulation;
+}
     </style>
 </head>
 <body>
@@ -110,30 +114,6 @@
       atualizarTela(dados);
     });
   });
-
-
-  
-  /*fetch("/pontos")
-    .then(function(resposta) {
-      return resposta.json();
-    })
-    .then(function(dados) {
-      pontos = dados.pontos
-      display.textContent = dados.pontos;
-    });
-
-  botao.addEventListener("click", function() {
-     fetch("/pontos", {
-      method: "POST"
-     })
-    .then(function(resposta) {
-      return resposta.json();
-    })
-    .then(function(dados) {
-      pontos = dados.pontos
-      display.textContent = dados.pontos;
-    });
-  }); */
   
 </script>
 </body>
