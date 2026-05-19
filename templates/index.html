@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Meu Clicker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap" rel="stylesheet">
+    <style>
+      body {
+        background-color: #f9efce;
+        font-family: "Bubblegum Sans";
+        color: #333333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+      }
+
+      #gato {
+        width: 300px;
+        height: 300px;
+        object-fit: cover;
+        border-radius: 10px;
+        cursor: pointer;
+        border: 4px solid #f8c1bf;
+        box-shadow: 3px 3px 6px #aaaaaa;
+      }
+
+      #btn-vender {
+        background-color: #c2e0bc;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: "Bubblegum Sans";
+        font-size: 1rem;
+        font-size: 1.2rem;
+        box-shadow: 3px 3px 6px #aaaaaa;
+      }
+    </style>
+</head>
+<body>
+<h1>GatitoZito 🐱</h1>
+
+<img src="https://cataas.com/cat" id="gato" alt="gatinho">
+
+<p>💰 Moedas: <strong id="moedas">0</strong></p>
+<p>🧶 Bolas de Pelo: <strong id="pelos">0</strong></p>
+
+<button id="btn-vender">Vender Bolas de Pelo</button>
+
+
+<script>
+  const gato = document.querySelector("#gato");
+  const btnVender = document.querySelector("#btn-vender");
+  const displayMoedas = document.querySelector("#moedas");
+  const displayPelos = document.querySelector("#pelos");
+
+  function tocarSom() {
+    const contexto = new AudioContext();
+    const oscilador = contexto.createOscillator();
+    const volume = contexto.createGain();
+
+    oscilador.connect(volume);
+    volume.connect(contexto.destination);
+
+    oscilador.frequency.value = 520;
+    volume.gain.value = 0.1;
+
+    oscilador.start();
+    oscilador.stop(contexto.currentTime + 0.1);
+}
+
+  function atualizarTela(dados) {
+    displayMoedas.textContent = dados.moedas;
+    displayPelos.textContent = dados.pelos;
+  }
+
+  fetch("/estado")
+    .then(function(resposta) {
+      return resposta.json();
+    })
+    .then(function(dados) {
+      atualizarTela(dados);
+    });
+
+  gato.addEventListener("click", function() {
+    tocarSom()
+    fetch("/clicar", {
+      method: "POST"
+    })
+    .then(function(resposta) {
+      return resposta.json();
+    })
+    .then(function(dados) {
+      atualizarTela(dados);
+    });
+ 
+  });
+
+  btnVender.addEventListener("click", function() {
+    fetch("/vender", {
+      method: "POST"
+    })
+    .then(function(resposta) {
+      return resposta.json();
+    })
+    .then(function(dados) {
+      atualizarTela(dados);
+    });
+  });
+
+
+  
+  /*fetch("/pontos")
+    .then(function(resposta) {
+      return resposta.json();
+    })
+    .then(function(dados) {
+      pontos = dados.pontos
+      display.textContent = dados.pontos;
+    });
+
+  botao.addEventListener("click", function() {
+     fetch("/pontos", {
+      method: "POST"
+     })
+    .then(function(resposta) {
+      return resposta.json();
+    })
+    .then(function(dados) {
+      pontos = dados.pontos
+      display.textContent = dados.pontos;
+    });
+  }); */
+  
+</script>
+</body>
+</html>
