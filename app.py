@@ -38,24 +38,14 @@ def vender():
     db.session.commit()
     return jsonify({"moedas": jogador.moedas, "pelos": jogador.pelos})
 
-
-
-
-pontos = 0
+@app.route("/teste")
+def teste():
+    return "funcionou!"
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
-'''@app.route("/pontos", methods=["GET"])
-def get_pontos():
-    return {"pontos": pontos}
-
-@app.route("/pontos", methods=["POST"])
-def set_pontos():
-    global pontos
-    pontos += 1
-    return {"pontos": pontos}'''
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
