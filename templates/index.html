@@ -34,14 +34,81 @@
         border-radius: 8px;
         cursor: pointer;
         font-family: "Bubblegum Sans";
-        font-size: 1rem;
         font-size: 1.2rem;
         box-shadow: 3px 3px 6px #aaaaaa;
       }
 
+    #btn-loja {
+      background-color: #f9efce;
+      padding: 10px 20px;
+      border: 4px solid #68c9d2;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: "Bubblegum Sans";
+      font-size: 1.2rem;
+      box-shadow: 3px 3px 6px #aaaaaa;
+      margin-top: 20px;
+    }
+
+    #modal-loja {
+    display: none;
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #c2e0bc;
+    border: 3px solid #e2be5e;
+    border-radius: 12px;
+    padding: 20px;
+    width: 250px;
+    box-shadow: 4px 4px 10px #aaaaaa;
+    }
+
+    #modal-inventario {
+    display: none;
+    position: fixed;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #f8c1bf;
+    border: 3px solid #e2be5e;
+    border-radius: 12px;
+    padding: 20px;
+    width: 250px;
+    box-shadow: 4px 4px 10px #aaaaaa;
+    }
+
+    #btn-inventario {
+      background-color: #f8c1bf;
+      padding: 10px 20px;
+      border: 4px solid #e2be5e;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: "Bubblegum Sans";
+      font-size: 1.2rem;
+      box-shadow: 3px 3px 6px #aaaaaa;
+      margin-top: 20px;
+    }
+
+    #btn-fechar-loja {
+      background-color: #ffb3b3;
+      border: 3px solid #e2be5e;
+      margin-top: 20px;
+      border-radius: 8px;
+    }
+
+    #btn-fechar-inventario {
+      background-color: #c2e0bc;
+      border: 3px solid #e2be5e;
+      margin-top: 20px;
+      border-radius: 8px;
+    }
+   
+
       * {
     touch-action: manipulation;
 }
+
     </style>
 </head>
 <body>
@@ -54,67 +121,246 @@
 
 <button id="btn-vender">Vender Bolas de Pelo</button>
 
+<button id="btn-loja">🛒 Loja</button>
+
+<div id="modal-loja">
+    <h2>🛒 Loja</h2>
+    <p id="timer-loja">Próximo sorteio: 3:00</p>
+    <div id="itens-loja"></div>
+    <button id="btn-fechar-loja">Fechar</button>
+</div>
+
+<button id="btn-inventario">🎒 Inventário</button>
+
+<div id="modal-inventario">
+    <h2>🎒 Inventário</h2>
+    <div id="itens-inventario"></div>
+    <button id="btn-fechar-inventario">Fechar</button>
+</div>
+
 
 <script>
-  const gato = document.querySelector("#gato");
-  const btnVender = document.querySelector("#btn-vender");
-  const displayMoedas = document.querySelector("#moedas");
-  const displayPelos = document.querySelector("#pelos");
 
-  function tocarSom() {
+const gato = document.querySelector("#gato");
+const btnVender = document.querySelector("#btn-vender");
+const displayMoedas = document.querySelector("#moedas");
+const displayPelos = document.querySelector("#pelos");
+let jogadorId = null;
+let modalInventario = null;
+let modalLoja = null;
+
+async function obterId() {
+    let id = localStorage.getItem("jogador_id");
+    if (id === null) {
+        const resposta = await fetch("/novo_jogador", { method: "POST" });
+        const dados = await resposta.json();
+        id = dados.id;
+        localStorage.setItem("jogador_id", id);
+    }
+    return id;
+}
+
+function atualizarTela(dados) {
+    displayMoedas.textContent = dados.moedas;
+    displayPelos.textContent = dados.pelos;
+}
+
+function tocarSom() {
     const contexto = new AudioContext();
     const oscilador = contexto.createOscillator();
     const volume = contexto.createGain();
-
     oscilador.connect(volume);
     volume.connect(contexto.destination);
-
     oscilador.frequency.value = 520;
     volume.gain.value = 0.1;
-
     oscilador.start();
     oscilador.stop(contexto.currentTime + 0.1);
 }
 
-  function atualizarTela(dados) {
-    displayMoedas.textContent = dados.moedas;
-    displayPelos.textContent = dados.pelos;
-  }
+function iniciarTimerInventario() {
+    setInterval(function() {
+        if (modalInventario && modalInventario.style.display === "block") {
+            abrirInventario();
+        }
+    }, 5000);
+}
 
-  fetch("/estado")
-    .then(function(resposta) {
-      return resposta.json();
-    })
-    .then(function(dados) {
-      atualizarTela(dados);
+function iniciarPassivo() {
+    setInterval(function() {
+        fetch("/passivo/" + jogadorId, { method: "POST" })
+            .then(function(resposta) { return resposta.json(); })
+            .then(function(dados) { atualizarTela(dados); });
+    }, 1000);
+}
+
+function iniciarTimerLoja() {
+  timer = 60;
+    let segundos = timer;
+    const timerDisplay = document.querySelector("#timer-loja");
+    setInterval(function() {
+        segundos -= 1;
+        const minutos = Math.floor(segundos / 60);
+        const segs = segundos % 60;
+        timerDisplay.textContent = `Próximo sorteio: ${minutos}:${segs < 10 ? "0" : ""}${segs}`;
+        if (segundos <= 0) {
+            segundos = timer;
+            fetch("/sortear_loja", { method: "POST" })
+                .then(function(resposta) { return resposta.json(); })
+                .then(function() {
+                    if (modalLoja && modalLoja.style.display === "block") {
+                        abrirLoja();
+                    }
+                });
+        }
+    }, 1000);
+}
+
+
+async function abrirLoja() {
+    const resposta = await fetch("/loja");
+    const itens = await resposta.json();
+    const container = document.querySelector("#itens-loja");
+    container.innerHTML = "";
+    itens.forEach(function(item) {
+        const div = document.createElement("div");
+        div.innerHTML = `
+            <p><strong>${item.nome}</strong> (${item.raridade})</p>
+            <p>Preço: ${item.preco} moedas</p>
+            <p>Estoque: ${item.estoque}</p>
+            <button ${item.disponivel ? "" : "disabled"} onclick="comprarItem(${item.id})">
+                ${item.disponivel && item.estoque > 0 ? "Comprar" : "Indisponível"}
+            </button>
+        `;
+        container.appendChild(div);
+    });
+}
+
+async function comprarItem(item_id) {
+    const resposta = await fetch("/comprar/" + jogadorId + "/" + item_id, { method: "POST" });
+    const dados = await resposta.json();
+    if (dados.erro) {
+        alert(dados.erro);
+    } else {
+        atualizarTela(dados);
+        abrirLoja();
+        if (modalInventario && modalInventario.style.display === "block") {
+          abrirInventario();
+        }
+    }
+    
+}
+
+async function abrirInventario() {
+    const resposta = await fetch("/inventario/" + jogadorId);
+    const itens = await resposta.json();
+    
+    const container = document.querySelector("#itens-inventario");
+    container.innerHTML = "";
+    
+    if (itens.length === 0) {
+        container.innerHTML = "<p>Inventário vazio!</p>";
+        return;
+    }
+    
+    const agrupados = {};
+
+itens.forEach(function(item) {
+    if (agrupados[item.nome]) {
+        agrupados[item.nome].quantidade += 1;
+        if (item.equipado) agrupados[item.nome].equipado = true;
+        if (item.inventario_id) agrupados[item.nome].inventario_id = item.inventario_id;
+    } else {
+        agrupados[item.nome] = {
+            nome: item.nome,
+            equipado: item.equipado,
+            inventario_id: item.inventario_id,
+            quantidade: 1
+        };
+    }
+});
+
+Object.values(agrupados).forEach(function(item) {
+    const div = document.createElement("div");
+    div.innerHTML = `
+        <p><strong>${item.nome}</strong> (${item.quantidade})</p>
+        <p>${item.equipado ? "✅ Ativo" : "💤 Inativo"}</p>
+        <button ${item.equipado ? "disabled" : ""} onclick="ativarItem(${item.inventario_id})">
+            ${item.equipado ? "Ativo" : "Ativar"}
+        </button>
+    `;
+    container.appendChild(div);
+});
+}
+
+
+async function ativarItem(inventario_id) {
+    const resposta = await fetch("/ativar/" + jogadorId + "/" + inventario_id, { method: "POST" });
+    const dados = await resposta.json();
+    if (dados.erro) {
+        alert(dados.erro);
+    } else {
+        atualizarTela(dados);
+        abrirInventario();
+    }
+}
+
+async function iniciar() {
+    const id = await obterId();
+    jogadorId = id;
+    const btnLoja = document.querySelector("#btn-loja");
+    const btnFecharLoja = document.querySelector("#btn-fechar-loja");
+    modalLoja = document.querySelector("#modal-loja");
+    const btnInventario = document.querySelector("#btn-inventario");
+    const btnFecharInventario = document.querySelector("#btn-fechar-inventario");
+    modalInventario = document.querySelector("#modal-inventario");
+
+    fetch("/estado/" + id)
+        .then(function(resposta) { return resposta.json(); })
+        .then(function(dados) { atualizarTela(dados); });
+
+    gato.addEventListener("click", function() {
+        tocarSom();
+        fetch("/clicar/" + id, { method: "POST" })
+            .then(function(resposta) { return resposta.json(); })
+            .then(function(dados) { atualizarTela(dados); });
     });
 
-  gato.addEventListener("click", function() {
-    tocarSom()
-    fetch("/clicar", {
-      method: "POST"
-    })
-    .then(function(resposta) {
-      return resposta.json();
-    })
-    .then(function(dados) {
-      atualizarTela(dados);
+    btnVender.addEventListener("click", function() {
+        fetch("/vender/" + id, { method: "POST" })
+            .then(function(resposta) { return resposta.json(); })
+            .then(function(dados) { atualizarTela(dados); });
     });
- 
-  });
 
-  btnVender.addEventListener("click", function() {
-    fetch("/vender", {
-      method: "POST"
-    })
-    .then(function(resposta) {
-      return resposta.json();
-    })
-    .then(function(dados) {
-      atualizarTela(dados);
+    btnLoja.addEventListener("click", function() {
+        modalLoja.style.display = "block";
+        abrirLoja();
     });
-  });
+
+    btnFecharLoja.addEventListener("click", function() {
+        modalLoja.style.display = "none";
+    });
+    btnInventario.addEventListener("click", function() {
+      modalInventario.style.display = "block";
+      abrirInventario();
+    });
+
+    btnFecharInventario.addEventListener("click", function() {
+      modalInventario.style.display = "none";
+    });
+
+    iniciarTimerInventario();
+    iniciarPassivo();
+    iniciarTimerLoja();
+
+
+}
+
+   
+
+iniciar();
   
 </script>
+
+
 </body>
 </html>
