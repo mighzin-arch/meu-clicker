@@ -3,13 +3,14 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import random
 import logging
+import os
 
 ultimo_sorteio = None
 app = Flask(__name__)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 loja_atual = []
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///jogo.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///jogo.db")
 db = SQLAlchemy(app)
 sorteio_atual = 0
 
