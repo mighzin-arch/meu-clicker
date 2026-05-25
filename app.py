@@ -2,12 +2,16 @@ from flask import Flask, render_template, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import random
+import logging
 
-
+ultimo_sorteio = None
 app = Flask(__name__)
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 loja_atual = []
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///jogo.db"
 db = SQLAlchemy(app)
+sorteio_atual = 0
 
 class Jogador(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -28,6 +32,13 @@ class Inventario(db.Model):
     equipado = db.Column(db.Boolean, default=False)
     expira_em = db.Column(db.DateTime, nullable=True)
 
+class CompraLoja(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    jogador_id = db.Column(db.Integer, db.ForeignKey("jogador.id"), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey("item.id"), nullable=False)
+    quantidade = db.Column(db.Integer, default=0)
+    sorteio_id = db.Column(db.Integer, nullable=False)
+
 with app.app_context():
     db.create_all()
     if Item.query.first() is None:
@@ -47,7 +58,7 @@ def get_estado(id):
 
 @app.route("/clicar/<int:id>", methods=["POST"])
 def clicar(id):
-    jogador = Jogador.query.get(id)
+    jogador = db.session.get(Jogador, id)
     pelos_por_clique = 1
 
     erva_ativa = Inventario.query.join(Item).filter(
@@ -82,7 +93,8 @@ def clicar(id):
     return jsonify({"moedas": jogador.moedas, "pelos": jogador.pelos})
 
 def sortear_loja():
-    global loja_atual
+    global loja_atual, sorteio_atual
+    sorteio_atual += 1
     
     estoques = {
         "comum": (2, 4),
@@ -119,7 +131,7 @@ def sortear_loja():
 
 @app.route("/vender/<int:id>", methods=["POST"])
 def vender(id):
-    jogador = Jogador.query.get(id)
+    jogador = db.session.get(Jogador, id)
 
     multiplicador = 1
 
@@ -162,47 +174,97 @@ def novo_jogador():
     db.session.commit()
     return jsonify({"id": jogador.id})
 
-@app.route("/loja", methods=["GET"])
-def loja():
-    global loja_atual
-    if not loja_atual:
+@app.route("/loja/<int:jogador_id>", methods=["GET"])
+def loja(jogador_id):
+    global loja_atual, ultimo_sorteio
+    
+    agora = datetime.now()
+    
+    if not loja_atual or ultimo_sorteio is None:
         sortear_loja()
-    return jsonify(loja_atual)
+        ultimo_sorteio = agora
+    elif (agora - ultimo_sorteio).total_seconds() >= 60:
+        sortear_loja()
+        ultimo_sorteio = agora
+    
+    proximo = ultimo_sorteio + timedelta(seconds=60)
+    segundos_restantes = max(1, int((proximo - agora).total_seconds()))
+    
+    resultado = []
+    for item in loja_atual:
+        compra = CompraLoja.query.filter_by(
+            jogador_id=jogador_id,
+            item_id=item["id"],
+            sorteio_id=sorteio_atual
+        ).first()
+        compras_feitas = compra.quantidade if compra else 0
+        estoque_restante = item["estoque"] - compras_feitas
+        resultado.append({
+            **item,
+            "estoque": estoque_restante,
+            "disponivel": item["disponivel"] and estoque_restante > 0
+        })
+    
+    return jsonify({
+        "itens": resultado,
+        "segundos_restantes": segundos_restantes
+    })
 
 @app.route("/sortear_loja", methods=["POST"])
 def fazer_sorteio():
+    global ultimo_sorteio
     sortear_loja()
+    ultimo_sorteio = datetime.now()
     return jsonify(loja_atual)
 
 @app.route("/comprar/<int:jogador_id>/<int:item_id>", methods=["POST"])
 def comprar(jogador_id, item_id):
-    jogador = Jogador.query.get(jogador_id)
-    item = Item.query.get(item_id)
+    jogador = db.session.get(Jogador, jogador_id)
+    item = db.session.get(Item, item_id)
 
-    if not item:
-        return jsonify({"erro": "item inválido"}), 400
+    if not item or jogador.moedas < item.preco:
+        return jsonify({"erro": "Moedas insuficientes ou item inválido"}), 400
 
-    if jogador.moedas < item.preco:
-        return jsonify({"erro": "moedas insuficientes"}), 400
+    # Pega o item da loja global para saber qual era o estoque inicial sorteado
+    estoque_original = next((i for i in loja_atual if i["id"] == item_id), None)
+    if not estoque_original or not estoque_original["disponivel"]:
+        return jsonify({"erro": "item indisponível"}), 400
 
+    # Verifica no BANCO DE DADOS quanto ESSE jogador já comprou
+    compra = CompraLoja.query.filter_by(
+        jogador_id=jogador_id,
+        item_id=item_id,
+        sorteio_id=sorteio_atual
+    ).first()
+
+    compras_feitas = compra.quantidade if compra else 0
+
+    if compras_feitas >= estoque_original["estoque"]:
+        return jsonify({"erro": "Você já esgotou seu estoque deste item"}), 400
+
+    # Registra a compra no banco
+    if compra:
+        compra.quantidade += 1
+    else:
+        nova_compra = CompraLoja(jogador_id=jogador_id, item_id=item_id, sorteio_id=sorteio_atual, quantidade=1)
+        db.session.add(nova_compra)
+
+    # Cria o item no inventário
     jogador.moedas -= item.preco
     novo_item = Inventario(jogador_id=jogador_id, item_id=item_id)
     db.session.add(novo_item)
+    
     db.session.commit()
 
-    for item_loja in loja_atual:       # ← adiciona daqui
-        if item_loja["id"] == item_id:
-            item_loja["estoque"] -= 1
-            if item_loja["estoque"] <= 0:
-                item_loja["disponivel"] = False
-            break                      # ← até aqui
+    # IMPORTANTE: Não mexemos na variável 'loja_atual' aqui!
+    # O estoque de cada um é controlado pela tabela CompraLoja.
 
     return jsonify({"moedas": jogador.moedas, "pelos": jogador.pelos})
-    
+
 @app.route("/ativar/<int:jogador_id>/<int:inventario_id>", methods=["POST"])
 def ativar(jogador_id, inventario_id):
-    jogador = Jogador.query.get(jogador_id)
-    entrada = Inventario.query.get(inventario_id)
+    jogador = db.session.get(Jogador, jogador_id)
+    entrada = db.session.get(Inventario, inventario_id)
     item = Item.query.get(entrada.item_id)
 
     if entrada.equipado:
@@ -255,7 +317,7 @@ def inventario(jogador_id):
 
 @app.route("/passivo/<int:id>", methods=["POST"])
 def passivo(id):
-    jogador = Jogador.query.get(id)
+    jogador = db.session.get(Jogador, id)
     
     pelos_passivos = 0
 

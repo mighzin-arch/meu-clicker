@@ -39,15 +39,16 @@
       }
 
     #btn-loja {
-      background-color: #f9efce;
-      padding: 10px 20px;
-      border: 4px solid #68c9d2;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: "Bubblegum Sans";
-      font-size: 1.2rem;
-      box-shadow: 3px 3px 6px #aaaaaa;
-      margin-top: 20px;
+    background-color: #f9efce;
+    border: 4px solid #68c9d2;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: "Bubblegum Sans";
+    font-size: 1.2rem;
+    box-shadow: 3px 3px 6px #aaaaaa;
+    flex: 1;
+    max-width: 150px;
     }
 
     #modal-loja {
@@ -80,14 +81,15 @@
 
     #btn-inventario {
       background-color: #f8c1bf;
-      padding: 10px 20px;
       border: 4px solid #e2be5e;
+      padding: 10px 20px;
       border-radius: 8px;
       cursor: pointer;
       font-family: "Bubblegum Sans";
       font-size: 1.2rem;
       box-shadow: 3px 3px 6px #aaaaaa;
-      margin-top: 20px;
+      flex: 1;
+      max-width: 150px;
     }
 
     #btn-fechar-loja {
@@ -103,11 +105,39 @@
       margin-top: 20px;
       border-radius: 8px;
     }
-   
 
-      * {
+    #efeitos-ativos {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    }
+
+    .efeito-card {
+    background-color: #e2be5e;
+    border: 2px solid #c2e0bc;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    box-shadow: 2px 2px 6px #aaaaaa;
+    }
+
+    #container-botoes {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+        justify-content: center;
+        width: 100%;
+    }
+
+    
+
+
+    * {
     touch-action: manipulation;
-}
+    }
 
     </style>
 </head>
@@ -119,9 +149,13 @@
 <p>💰 Moedas: <strong id="moedas">0</strong></p>
 <p>🧶 Bolas de Pelo: <strong id="pelos">0</strong></p>
 
-<button id="btn-vender">Vender Bolas de Pelo</button>
+<button id="btn-vender">Vender Bolas de Pelo 🧶</button>
 
-<button id="btn-loja">🛒 Loja</button>
+<div id="container-botoes">
+    <button id="btn-loja">🛒 Loja</button>
+    <button id="btn-inventario">🎒 Inventário</button>
+</div>
+
 
 <div id="modal-loja">
     <h2>🛒 Loja</h2>
@@ -130,7 +164,7 @@
     <button id="btn-fechar-loja">Fechar</button>
 </div>
 
-<button id="btn-inventario">🎒 Inventário</button>
+
 
 <div id="modal-inventario">
     <h2>🎒 Inventário</h2>
@@ -138,16 +172,26 @@
     <button id="btn-fechar-inventario">Fechar</button>
 </div>
 
+<div id="efeitos-ativos"> </div>
 
 <script>
 
+// --- VARIÁVEIS GLOBAIS ---
 const gato = document.querySelector("#gato");
 const btnVender = document.querySelector("#btn-vender");
 const displayMoedas = document.querySelector("#moedas");
 const displayPelos = document.querySelector("#pelos");
+
 let jogadorId = null;
 let modalInventario = null;
 let modalLoja = null;
+let segundosLoja = 60;
+let lojaAberta = false;
+let inventarioAberto = false;
+let bloqueado = false;
+let processandoPulso = false; 
+
+// --- FUNÇÕES DE APOIO ---
 
 async function obterId() {
     let id = localStorage.getItem("jogador_id");
@@ -166,7 +210,8 @@ function atualizarTela(dados) {
 }
 
 function tocarSom() {
-    const contexto = new AudioContext();
+    // Dica: Para otimizar, o ideal é criar o contexto fora, mas mantive aqui para não quebrar sua lógica
+    const contexto = new (window.AudioContext || window.webkitAudioContext)();
     const oscilador = contexto.createOscillator();
     const volume = contexto.createGain();
     oscilador.connect(volume);
@@ -177,185 +222,227 @@ function tocarSom() {
     oscilador.stop(contexto.currentTime + 0.1);
 }
 
-function iniciarTimerInventario() {
-    setInterval(function() {
-        if (modalInventario && modalInventario.style.display === "block") {
-            abrirInventario();
-        }
-    }, 5000);
-}
-
-function iniciarPassivo() {
-    setInterval(function() {
-        fetch("/passivo/" + jogadorId, { method: "POST" })
-            .then(function(resposta) { return resposta.json(); })
-            .then(function(dados) { atualizarTela(dados); });
-    }, 1000);
-}
-
-function iniciarTimerLoja() {
-  timer = 60;
-    let segundos = timer;
-    const timerDisplay = document.querySelector("#timer-loja");
-    setInterval(function() {
-        segundos -= 1;
-        const minutos = Math.floor(segundos / 60);
-        const segs = segundos % 60;
-        timerDisplay.textContent = `Próximo sorteio: ${minutos}:${segs < 10 ? "0" : ""}${segs}`;
+// Atualiza os segundos dos cards visualmente (sem pedir nada ao servidor)
+function atualizarContadoresVisuais() {
+    const cards = document.querySelectorAll(".efeito-card");
+    cards.forEach(card => {
+        const expira = new Date(card.dataset.expira);
+        const agora = new Date();
+        const segundos = Math.floor((expira - agora) / 1000);
+        
         if (segundos <= 0) {
-            segundos = timer;
-            fetch("/sortear_loja", { method: "POST" })
-                .then(function(resposta) { return resposta.json(); })
-                .then(function() {
-                    if (modalLoja && modalLoja.style.display === "block") {
-                        abrirLoja();
-                    }
-                });
+            card.remove(); 
+            // Opcional: recarregar inventário se o modal estiver aberto
+            if (inventarioAberto) abrirInventario();
+        } else {
+            const minutos = Math.floor(segundos / 60);
+            const segs = segundos % 60;
+            const icone = card.dataset.icone;
+            const nome = card.dataset.nome;
+            card.textContent = `${icone} ${nome}  ${minutos}:${segs < 10 ? "0" : ""}${segs}`;
         }
-    }, 1000);
+    });
 }
 
+function atualizarEfeitos(itens) {
+    const container = document.querySelector("#efeitos-ativos");
+    container.innerHTML = "";
+    
+    itens.forEach(item => {
+        if (!item.equipado) return;
+        const icones = { "pelo_passivo": "🧶", "mais_pelos": "🌿", "mais_moedas": "🔴", "super_gato": "🐟" };
+        const icone = icones[item.efeito] || "✨";
+        
+        const div = document.createElement("div");
+        div.className = "efeito-card";
+        div.dataset.expira = item.expira_em;
+        div.dataset.icone = icone;
+        div.dataset.nome = item.nome;
+        container.appendChild(div);
+    });
+    atualizarContadoresVisuais();
+}
+
+// --- FUNÇÕES DE AÇÃO ---
 
 async function abrirLoja() {
-    const resposta = await fetch("/loja");
-    const itens = await resposta.json();
+    const resposta = await fetch("/loja/" + jogadorId);
+    const dados = await resposta.json();
+    segundosLoja = dados.segundos_restantes;
     const container = document.querySelector("#itens-loja");
     container.innerHTML = "";
-    itens.forEach(function(item) {
+
+    dados.itens.forEach(item => {
         const div = document.createElement("div");
+        div.style = "display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;";
+        
+        const span = document.createElement("span");
+        span.innerHTML = `<strong>${item.nome}</strong> <small>(${item.raridade})</small> — ${item.preco}🪙 ${item.estoque > 0 ? "x" + item.estoque : ""}`;
+        
+        const btn = document.createElement("button");
+        btn.innerText = (item.disponivel && item.estoque > 0) ? "Comprar" : "✗";
+        btn.disabled = !(item.disponivel && item.estoque > 0);
+        btn.style.marginLeft = "8px";
+
+        btn.addEventListener("click", () => {
+            btn.disabled = true;
+            comprarItem(item.id);
+        }, { once: true });
+
+        div.appendChild(span);
+        div.appendChild(btn);
+        container.appendChild(div);
+    });
+    lojaAberta = true;
+}
+
+async function comprarItem(item_id) {
+    if (bloqueado) return;
+    bloqueado = true;
+    try {
+        const resposta = await fetch(`/comprar/${jogadorId}/${item_id}`, { method: "POST" });
+        const dados = await resposta.json();
+        if (dados.erro) alert(dados.erro);
+        else {
+            atualizarTela(dados);
+            await abrirLoja();
+            if (inventarioAberto) await abrirInventario();
+            // Atualiza efeitos após compra/ativação
+            const resInv = await fetch("/inventario/" + jogadorId);
+            const itens = await resInv.json();
+            atualizarEfeitos(itens);
+        }
+    } finally { bloqueado = false; }
+}
+
+async function abrirInventario() {
+    const resposta = await fetch("/inventario/" + jogadorId);
+    const itens = await resposta.json();
+    inventarioAberto = true;
+    const container = document.querySelector("#itens-inventario");
+    container.innerHTML = itens.length === 0 ? "<p>Inventário vazio!</p>" : "";
+    
+    const agrupados = {};
+    itens.forEach(item => {
+        if (agrupados[item.nome]) {
+            agrupados[item.nome].quantidade += 1;
+            if (item.equipado) agrupados[item.nome].equipado = true;
+        } else {
+            agrupados[item.nome] = { ...item, quantidade: 1 };
+        }
+    });
+
+    Object.values(agrupados).forEach(item => {
+        const div = document.createElement("div");
+        div.style = "display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;";
         div.innerHTML = `
-            <p><strong>${item.nome}</strong> (${item.raridade})</p>
-            <p>Preço: ${item.preco} moedas</p>
-            <p>Estoque: ${item.estoque}</p>
-            <button ${item.disponivel ? "" : "disabled"} onclick="comprarItem(${item.id})">
-                ${item.disponivel && item.estoque > 0 ? "Comprar" : "Indisponível"}
+            <span><strong>${item.nome}</strong> x${item.quantidade} — ${item.equipado ? "✅" : "💤"}</span>
+            <button ${item.equipado ? "disabled" : ""} onclick="ativarItem(${item.inventario_id})" style="margin-left:8px;">
+                ${item.equipado ? "Ativo" : "Ativar"}
             </button>
         `;
         container.appendChild(div);
     });
 }
 
-async function comprarItem(item_id) {
-    const resposta = await fetch("/comprar/" + jogadorId + "/" + item_id, { method: "POST" });
-    const dados = await resposta.json();
-    if (dados.erro) {
-        alert(dados.erro);
-    } else {
-        atualizarTela(dados);
-        abrirLoja();
-        if (modalInventario && modalInventario.style.display === "block") {
-          abrirInventario();
-        }
-    }
-    
-}
-
-async function abrirInventario() {
-    const resposta = await fetch("/inventario/" + jogadorId);
-    const itens = await resposta.json();
-    
-    const container = document.querySelector("#itens-inventario");
-    container.innerHTML = "";
-    
-    if (itens.length === 0) {
-        container.innerHTML = "<p>Inventário vazio!</p>";
-        return;
-    }
-    
-    const agrupados = {};
-
-itens.forEach(function(item) {
-    if (agrupados[item.nome]) {
-        agrupados[item.nome].quantidade += 1;
-        if (item.equipado) agrupados[item.nome].equipado = true;
-        if (item.inventario_id) agrupados[item.nome].inventario_id = item.inventario_id;
-    } else {
-        agrupados[item.nome] = {
-            nome: item.nome,
-            equipado: item.equipado,
-            inventario_id: item.inventario_id,
-            quantidade: 1
-        };
-    }
-});
-
-Object.values(agrupados).forEach(function(item) {
-    const div = document.createElement("div");
-    div.innerHTML = `
-        <p><strong>${item.nome}</strong> (${item.quantidade})</p>
-        <p>${item.equipado ? "✅ Ativo" : "💤 Inativo"}</p>
-        <button ${item.equipado ? "disabled" : ""} onclick="ativarItem(${item.inventario_id})">
-            ${item.equipado ? "Ativo" : "Ativar"}
-        </button>
-    `;
-    container.appendChild(div);
-});
-}
-
-
 async function ativarItem(inventario_id) {
-    const resposta = await fetch("/ativar/" + jogadorId + "/" + inventario_id, { method: "POST" });
+    const resposta = await fetch(`/ativar/${jogadorId}/${inventario_id}`, { method: "POST" });
     const dados = await resposta.json();
-    if (dados.erro) {
-        alert(dados.erro);
-    } else {
+    if (dados.erro) alert(dados.erro);
+    else {
         atualizarTela(dados);
-        abrirInventario();
+        await abrirInventario();
+        const resInv = await fetch("/inventario/" + jogadorId);
+        const itens = await resInv.json();
+        atualizarEfeitos(itens);
     }
 }
+
+// --- O CORAÇÃO DO JOGO (HEARTBEAT) ---
 
 async function iniciar() {
     const id = await obterId();
     jogadorId = id;
-    const btnLoja = document.querySelector("#btn-loja");
-    const btnFecharLoja = document.querySelector("#btn-fechar-loja");
+
+    // Configuração de Modais
     modalLoja = document.querySelector("#modal-loja");
-    const btnInventario = document.querySelector("#btn-inventario");
-    const btnFecharInventario = document.querySelector("#btn-fechar-inventario");
     modalInventario = document.querySelector("#modal-inventario");
 
-    fetch("/estado/" + id)
-        .then(function(resposta) { return resposta.json(); })
-        .then(function(dados) { atualizarTela(dados); });
-
-    gato.addEventListener("click", function() {
-        tocarSom();
-        fetch("/clicar/" + id, { method: "POST" })
-            .then(function(resposta) { return resposta.json(); })
-            .then(function(dados) { atualizarTela(dados); });
+    // Eventos de Botões Principais
+    document.querySelector("#btn-loja").addEventListener("click", () => {
+        modalLoja.style.display = lojaAberta ? "none" : "block";
+        if (!lojaAberta) abrirLoja();
+        else lojaAberta = false;
     });
 
-    btnVender.addEventListener("click", function() {
-        fetch("/vender/" + id, { method: "POST" })
-            .then(function(resposta) { return resposta.json(); })
-            .then(function(dados) { atualizarTela(dados); });
-    });
-
-    btnLoja.addEventListener("click", function() {
-        modalLoja.style.display = "block";
-        abrirLoja();
-    });
-
-    btnFecharLoja.addEventListener("click", function() {
+    document.querySelector("#btn-fechar-loja").addEventListener("click", () => {
         modalLoja.style.display = "none";
-    });
-    btnInventario.addEventListener("click", function() {
-      modalInventario.style.display = "block";
-      abrirInventario();
+        lojaAberta = false;
     });
 
-    btnFecharInventario.addEventListener("click", function() {
-      modalInventario.style.display = "none";
+    document.querySelector("#btn-inventario").addEventListener("click", () => {
+        modalInventario.style.display = inventarioAberto ? "none" : "block";
+        if (!inventarioAberto) abrirInventario();
+        else inventarioAberto = false;
     });
 
-    iniciarTimerInventario();
-    iniciarPassivo();
-    iniciarTimerLoja();
+    document.querySelector("#btn-fechar-inventario").addEventListener("click", () => {
+        modalInventario.style.display = "none";
+        inventarioAberto = false;
+    });
 
+    // Cliques do Jogo
+    gato.addEventListener("click", async () => {
+        if (bloqueado) return;
+        tocarSom();
+        const res = await fetch("/clicar/" + id, { method: "POST" });
+        atualizarTela(await res.json());
+    });
 
+    btnVender.addEventListener("click", async () => {
+        const res = await fetch("/vender/" + id, { method: "POST" });
+        atualizarTela(await res.json());
+    });
+
+    // Carga Inicial
+    const resEst = await fetch("/estado/" + id);
+    atualizarTela(await resEst.json());
+    const resInv = await fetch("/inventario/" + id);
+    atualizarEfeitos(await resInv.json());
+
+    // --- INÍCIO DO PULSO ÚNICO ---
+    setInterval(async () => {
+        if (processandoPulso || !jogadorId) return;
+        processandoPulso = true;
+
+        try {
+            // 1. Ganho Passivo
+            const resPassivo = await fetch("/passivo/" + jogadorId, { method: "POST" });
+            atualizarTela(await resPassivo.json());
+
+            // 2. Timer da Loja
+            segundosLoja -= 1;
+            const timerDisplay = document.querySelector("#timer-loja");
+            if (timerDisplay) {
+                const min = Math.floor(segundosLoja / 60);
+                const seg = segundosLoja % 60;
+                timerDisplay.textContent = `Próximo sorteio: ${min}:${seg < 10 ? "0" : ""}${seg}`;
+            }
+
+            if (segundosLoja <= 0) {
+                await abrirLoja(); // Recarrega itens automaticamente
+            }
+
+            // 3. Contadores Visuais
+            atualizarContadoresVisuais();
+
+        } catch (e) {
+            console.error("Pulso falhou:", e);
+        } finally {
+            processandoPulso = false;
+        }
+    }, 1000);
 }
-
-   
 
 iniciar();
   
