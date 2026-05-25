@@ -408,9 +408,6 @@ async function iniciar() {
 
     // Carga Inicial
     const resEst = await fetch("/estado/" + id);
-    atualizarTela(await resEst.json());
-    const resInv = await fetch("/inventario/" + id);
-    atualizarEfeitos(await resInv.json());
     const dadosEst = await resEst.json();
     if (dadosEst.erro) {
         localStorage.clear();
@@ -419,6 +416,9 @@ async function iniciar() {
     }
 
     atualizarTela(dadosEst);
+
+    const resInv = await fetch("/inventario/" + id);
+    atualizarEfeitos(await resInv.json());
 
 
     // --- INÍCIO DO PULSO ÚNICO ---
