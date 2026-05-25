@@ -362,6 +362,8 @@ async function ativarItem(inventario_id) {
 
 async function iniciar() {
     const id = await obterId();
+   
+    }
     jogadorId = id;
 
     // Configuração de Modais
@@ -409,6 +411,15 @@ async function iniciar() {
     atualizarTela(await resEst.json());
     const resInv = await fetch("/inventario/" + id);
     atualizarEfeitos(await resInv.json());
+    const dadosEst = await resEst.json();
+    if (dadosEst.erro) {
+        localStorage.clear();
+        location.reload();
+        return;
+    }
+
+    atualizarTela(dadosEst);
+
 
     // --- INÍCIO DO PULSO ÚNICO ---
     setInterval(async () => {
@@ -448,7 +459,7 @@ async function iniciar() {
         processandoPulso = false;
     }
 }, 1000);
-}
+
 
 iniciar();
   

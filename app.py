@@ -53,7 +53,9 @@ with app.app_context():
 
 @app.route("/estado/<int:id>", methods=["GET"])
 def get_estado(id):
-    jogador = Jogador.query.get(id)
+    jogador = db.session.get(Jogador, id)
+    if not jogador:
+        return jsonify({"erro": "jogador não encontrado"}), 404
     return jsonify({"moedas": jogador.moedas, "pelos": jogador.pelos})
 
 @app.route("/clicar/<int:id>", methods=["POST"])
