@@ -412,36 +412,42 @@ async function iniciar() {
 
     // --- INÍCIO DO PULSO ÚNICO ---
     setInterval(async () => {
-        if (processandoPulso || !jogadorId) return;
-        processandoPulso = true;
+    if (processandoPulso || !jogadorId) return;
+    processandoPulso = true;
 
-        try {
-            // 1. Ganho Passivo
-            const resPassivo = await fetch("/passivo/" + jogadorId, { method: "POST" });
-            atualizarTela(await resPassivo.json());
-
-            // 2. Timer da Loja
-            segundosLoja -= 1;
-            const timerDisplay = document.querySelector("#timer-loja");
-            if (timerDisplay) {
-                const min = Math.floor(segundosLoja / 60);
-                const seg = segundosLoja % 60;
-                timerDisplay.textContent = `Próximo sorteio: ${min}:${seg < 10 ? "0" : ""}${seg}`;
-            }
-
-            if (segundosLoja <= 0) {
-                await abrirLoja(); // Recarrega itens automaticamente
-            }
-
-            // 3. Contadores Visuais
-            atualizarContadoresVisuais();
-
-        } catch (e) {
-            console.error("Pulso falhou:", e);
-        } finally {
-            processandoPulso = false;
+    try {
+        // 1. Ganho Passivo
+        const resPassivo = await fetch("/passivo/" + jogadorId, { method: "POST" });
+        const dadosPassivo = await resPassivo.json();
+        if (dadosPassivo.erro) {
+            localStorage.clear();
+            location.reload();
+            return;
         }
-    }, 1000);
+        atualizarTela(dadosPassivo);
+
+        // 2. Timer da Loja
+        segundosLoja -= 1;
+        const timerDisplay = document.querySelector("#timer-loja");
+        if (timerDisplay) {
+            const min = Math.floor(segundosLoja / 60);
+            const seg = segundosLoja % 60;
+            timerDisplay.textContent = `Próximo sorteio: ${min}:${seg < 10 ? "0" : ""}${seg}`;
+        }
+
+        if (segundosLoja <= 0) {
+            await abrirLoja();
+        }
+
+        // 3. Contadores Visuais
+        atualizarContadoresVisuais();
+
+    } catch (e) {
+        console.error("Pulso falhou:", e);
+    } finally {
+        processandoPulso = false;
+    }
+}, 1000);
 }
 
 iniciar();

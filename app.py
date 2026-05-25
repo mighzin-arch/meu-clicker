@@ -59,6 +59,9 @@ def get_estado(id):
 @app.route("/clicar/<int:id>", methods=["POST"])
 def clicar(id):
     jogador = db.session.get(Jogador, id)
+    if not jogador:
+        return jsonify({"erro": "jogador não encontrado"}), 404
+
     pelos_por_clique = 1
 
     erva_ativa = Inventario.query.join(Item).filter(
@@ -132,6 +135,9 @@ def sortear_loja():
 @app.route("/vender/<int:id>", methods=["POST"])
 def vender(id):
     jogador = db.session.get(Jogador, id)
+    if not jogador:
+        return jsonify({"erro": "jogador não encontrado"}), 404
+        
 
     multiplicador = 1
 
@@ -220,6 +226,9 @@ def fazer_sorteio():
 @app.route("/comprar/<int:jogador_id>/<int:item_id>", methods=["POST"])
 def comprar(jogador_id, item_id):
     jogador = db.session.get(Jogador, jogador_id)
+    if not jogador:
+        return jsonify({"erro": "jogador não encontrado"}), 404
+        
     item = db.session.get(Item, item_id)
 
     if not item or jogador.moedas < item.preco:
@@ -318,6 +327,9 @@ def inventario(jogador_id):
 @app.route("/passivo/<int:id>", methods=["POST"])
 def passivo(id):
     jogador = db.session.get(Jogador, id)
+    if not jogador:
+        return jsonify({"erro": "jogador não encontrado"}), 404
+        
     
     pelos_passivos = 0
 
