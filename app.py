@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 import logging
 import os
@@ -77,21 +77,21 @@ def clicar(id):
     erva_ativa = Inventario.query.join(Item).filter(
         Inventario.jogador_id == id,
         Inventario.equipado == True,
-        Inventario.expira_em > datetime.utcnow(),
+        Inventario.expira_em > datetime.now(),
         Item.efeito == "mais_pelos"
     ).first()
 
     laser_ativo = Inventario.query.join(Item).filter(
         Inventario.jogador_id == id,
         Inventario.equipado == True,
-        Inventario.expira_em > datetime.utcnow(),
+        Inventario.expira_em > datetime.now(),
         Item.efeito == "mais_moedas"
     ).first()
 
     super_gato_ativo = Inventario.query.join(Item).filter(
         Inventario.jogador_id == id,
         Inventario.equipado == True,
-        Inventario.expira_em > datetime.utcnow(),
+        Inventario.expira_em > datetime.now(),
         Item.efeito == "super_gato"
     ).first()
 
@@ -154,14 +154,14 @@ def vender(id):
     laser_ativo = Inventario.query.join(Item).filter(
         Inventario.jogador_id == id,
         Inventario.equipado == True,
-        Inventario.expira_em > datetime.utcnow(),
+        Inventario.expira_em > datetime.now(),
         Item.efeito == "mais_moedas"
     ).first()
 
     super_gato_ativo = Inventario.query.join(Item).filter(
         Inventario.jogador_id == id,
         Inventario.equipado == True,
-        Inventario.expira_em > datetime.utcnow(),
+        Inventario.expira_em > datetime.now(),
         Item.efeito == "super_gato"
     ).first()
     
@@ -194,7 +194,7 @@ def novo_jogador():
 def loja(jogador_id):
     global loja_atual, ultimo_sorteio
     
-    agora = datetime.utcnow()
+    agora = datetime.now()
     
     if not loja_atual or ultimo_sorteio is None:
         sortear_loja()
@@ -230,7 +230,7 @@ def loja(jogador_id):
 def fazer_sorteio():
     global ultimo_sorteio
     sortear_loja()
-    ultimo_sorteio = datetime.utcnow()
+    ultimo_sorteio = datetime.now()
     return jsonify(loja_atual)
 
 @app.route("/comprar/<int:jogador_id>/<int:item_id>", methods=["POST"])
@@ -298,7 +298,7 @@ def ativar(jogador_id, inventario_id):
 
     duracao = duracoes.get(item.efeito, 60)
     entrada.equipado = True
-    entrada.expira_em = datetime.utcnow() + timedelta(seconds=duracao)
+    entrada.expira_em = datetime.now() + timedelta(seconds=duracao)
 
     if item.efeito == "super_gato":
         jogador.pelos += 20
@@ -319,12 +319,12 @@ def inventario(jogador_id):
     for entrada in entradas:
         item = Item.query.get(entrada.item_id)
 
-        if entrada.equipado and entrada.expira_em and entrada.expira_em < datetime.utcnow():
+        if entrada.equipado and entrada.expira_em and entrada.expira_em < datetime.now():
             db.session.delete(entrada)
             db.session.commit()
             continue
 
-        ativo = entrada.equipado and entrada.expira_em and entrada.expira_em > datetime.utcnow()
+        ativo = entrada.equipado and entrada.expira_em and entrada.expira_em > datetime.now()
         resultado.append({
             "inventario_id": entrada.id,
             "nome": item.nome,
@@ -346,21 +346,21 @@ def passivo(id):
     novelo_ativo = Inventario.query.join(Item).filter(
         Inventario.jogador_id == id,
         Inventario.equipado == True,
-        Inventario.expira_em > datetime.utcnow(),
+        Inventario.expira_em > datetime.now(),
         Item.efeito == "pelo_passivo"
     ).first()
 
     laser_ativo = Inventario.query.join(Item).filter(
         Inventario.jogador_id == id,
         Inventario.equipado == True,
-        Inventario.expira_em > datetime.utcnow(),
+        Inventario.expira_em > datetime.now(),
         Item.efeito == "mais_moedas"
     ).first()
 
     super_gato_ativo = Inventario.query.join(Item).filter(
         Inventario.jogador_id == id,
         Inventario.equipado == True,
-        Inventario.expira_em > datetime.utcnow(),
+        Inventario.expira_em > datetime.now(),
         Item.efeito == "super_gato"
     ).first()
 
