@@ -1,42 +1,43 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
     <title>Meu Clicker</title>
     <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap" rel="stylesheet">
     <style>
-      body {
-        background-color: #f9efce;
-        font-family: "Bubblegum Sans";
-        color: #333333;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-        padding: 20px;
-      }
+    body {
+    background-color: #f9efce;
+    font-family: "Bubblegum Sans";
+    color: #333333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    }
 
-      #gato {
-        width: 300px;
-        height: 300px;
-        object-fit: cover;
-        border-radius: 10px;
-        cursor: pointer;
-        border: 4px solid #f8c1bf;
-        box-shadow: 3px 3px 6px #aaaaaa;
-      }
+    #gato {
+    width: 300px;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 4px solid #f8c1bf;
+    box-shadow: 3px 3px 6px #aaaaaa;
+    }
 
-      #btn-vender {
-        background-color: #c2e0bc;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-family: "Bubblegum Sans";
-        font-size: 1.2rem;
-        box-shadow: 3px 3px 6px #aaaaaa;
-      }
+    #btn-vender {
+    background-color: #c2e0bc;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: "Bubblegum Sans";
+    font-size: 1.2rem;
+    box-shadow: 3px 3px 6px #aaaaaa;
+    }
 
     #btn-loja {
     background-color: #f9efce;
@@ -80,30 +81,30 @@
     }
 
     #btn-inventario {
-      background-color: #f8c1bf;
-      border: 4px solid #e2be5e;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: "Bubblegum Sans";
-      font-size: 1.2rem;
-      box-shadow: 3px 3px 6px #aaaaaa;
-      flex: 1;
-      max-width: 150px;
+    background-color: #f8c1bf;
+    border: 4px solid #e2be5e;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: "Bubblegum Sans";
+    font-size: 1.2rem;
+    box-shadow: 3px 3px 6px #aaaaaa;
+    flex: 1;
+    max-width: 150px;
     }
 
     #btn-fechar-loja {
-      background-color: #ffb3b3;
-      border: 3px solid #e2be5e;
-      margin-top: 20px;
-      border-radius: 8px;
+    background-color: #ffb3b3;
+    border: 3px solid #e2be5e;
+    margin-top: 20px;
+    border-radius: 8px;
     }
 
     #btn-fechar-inventario {
-      background-color: #c2e0bc;
-      border: 3px solid #e2be5e;
-      margin-top: 20px;
-      border-radius: 8px;
+    background-color: #c2e0bc;
+    border: 3px solid #e2be5e;
+    margin-top: 20px;
+    border-radius: 8px;
     }
 
     #efeitos-ativos {
@@ -125,14 +126,161 @@
     }
 
     #container-botoes {
-        display: flex;
-        gap: 15px;
-        margin-top: 20px;
-        justify-content: center;
-        width: 100%;
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: center;
+    width: 100%;
     }
 
-    
+    #btn-guia {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #68c9d2;
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 2px 2px 6px #aaaaaa;
+    }
+
+    #modal-guia {
+    display: none;
+    position: fixed;
+    bottom: 75px;
+    right: 20px;
+    background-color: #f9efce;
+    border: 3px solid #68c9d2;
+    border-radius: 12px;
+    padding: 20px;
+    width: 270px;
+    box-shadow: 4px 4px 10px #aaaaaa;
+    }
+
+    #btn-ranking {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background-color: #e2be5e;
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 2px 2px 6px #aaaaaa;
+    }
+
+    #modal-ranking {
+    display: none;
+    position: fixed;
+    bottom: 135px;
+    right: 20px;
+    background-color: #f9efce;
+    border: 3px solid #e2be5e;
+    border-radius: 12px;
+    padding: 20px;
+    width: 270px;
+    box-shadow: 4px 4px 10px #aaaaaa;
+    }
+
+    #modal-nome {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #f9efce;
+    border: 3px solid #68c9d2;
+    border-radius: 12px;
+    padding: 30px;
+    width: 300px;
+    box-shadow: 4px 4px 10px #aaaaaa;
+    text-align: center;
+    z-index: 100;
+    }
+
+    #input-nome {
+    font-family: "Bubblegum Sans";
+    font-size: 1rem;
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid #68c9d2;
+    width: 100%;
+    margin: 10px 0;
+    }
+
+    #btn-salvar-nome {
+    background-color: #68c9d2;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: "Bubblegum Sans";
+    font-size: 1rem;
+    }
+
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+        font-size: 1.1rem;
+    }
+
+    #gato {
+        width: 220px;
+        height: 220px;
+    }
+
+    #modal-loja, #modal-inventario {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        top: 10px;
+        bottom: 10px;
+        width: auto;
+        transform: none;
+        overflow-y: auto;
+        font-size: 1rem;
+    }
+
+    #modal-guia {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: 75px;
+        width: auto;
+        font-size: 1rem;
+    }
+
+    #btn-guia {
+        bottom: 10px;
+        right: 10px;
+        width: 55px;
+        height: 55px;
+        font-size: 1.5rem;
+    }
+
+    .efeito-card {
+        font-size: 1rem;
+        padding: 10px 14px;
+    }
+
+    #efeitos-ativos {
+        bottom: 10px;
+        left: 10px;
+    }
+
+    #btn-ranking {
+        bottom: 80px;
+        right: 10px;
+        width: 55px;
+        height: 55px;
+        font-size: 1.5rem;
+    }
+}
 
 
     * {
@@ -173,6 +321,32 @@
 </div>
 
 <div id="efeitos-ativos"> </div>
+
+<button id="btn-guia">🔍</button>
+
+<div id="modal-guia">
+    <h2>📖 Guia de Itens</h2>
+    <p><strong>🧶 Novelo</strong> (comum) — Gera 1 pelo por segundo automaticamente. Dura 60 segundos.</p>
+    <p><strong>🌿 Erva de Gato</strong> (incomum) — Cada clique gera 2 pelos. Dura 3 minutos.</p>
+    <p><strong>🔴 Laser</strong> (raro) — 3 pelos por clique + 2 pelos por segundo. Dura 2 minutos.</p>
+    <p><strong>🐟 Petisco</strong> (lendário) — 5 pelos por clique, vendas x2, +20 pelos imediatos, 1 pelo/seg. Dura 5 minutos.</p>
+    <button id="btn-fechar-guia">Fechar</button>
+</div>
+
+<button id="btn-ranking">🏆</button>
+
+<div id="modal-ranking">
+    <h2>🏆 Ranking</h2>
+    <div id="lista-ranking"></div>
+    <button id="btn-fechar-ranking">Fechar</button>
+</div>
+
+<div id="modal-nome">
+    <h2>👋 Bem-vindo ao GatitoZito!</h2>
+    <p>Escolha um nome para aparecer no ranking:</p>
+    <input type="text" id="input-nome" placeholder="Seu nome..." maxlength="20">
+    <button id="btn-salvar-nome">Salvar</button>
+</div>
 
 <script>
 
@@ -358,18 +532,61 @@ async function ativarItem(inventario_id) {
     }
 }
 
+async function abrirRanking() {
+    const resposta = await fetch("/ranking");
+    const jogadores = await resposta.json();
+    
+    const container = document.querySelector("#lista-ranking");
+    container.innerHTML = "";
+    
+    if (jogadores.length === 0) {
+        container.innerHTML = "<p>Nenhum jogador no ranking ainda!</p>";
+        return;
+    }
+    
+    jogadores.forEach(function(jogador) {
+        const div = document.createElement("div");
+        div.innerHTML = `<p>${jogador.posicao}. <strong>${jogador.nome}</strong> — ${jogador.moedas} 🪙</p>`;
+        container.appendChild(div);
+    });
+}
+
+async function verificarNome(id) {
+    const resposta = await fetch("/nome/" + id);
+    const dados = await resposta.json();
+    
+    if (!dados.nome) {
+        document.querySelector("#modal-nome").style.display = "block";
+    }
+}
+
 // --- O CORAÇÃO DO JOGO (HEARTBEAT) ---
 
 async function iniciar() {
     const id = await obterId();
-   
+
     jogadorId = id;
 
-    // Configuração de Modais
+    // --- Modais ---
     modalLoja = document.querySelector("#modal-loja");
     modalInventario = document.querySelector("#modal-inventario");
+    const modalGuia = document.querySelector("#modal-guia");
+    const btnRanking = document.querySelector("#btn-ranking");
+    const btnFecharRanking = document.querySelector("#btn-fechar-ranking");
+    const modalRanking = document.querySelector("#modal-ranking");
 
-    // Eventos de Botões Principais
+    // --- Botões principais ---
+
+    btnRanking.addEventListener("click", () => {
+    const visivel = modalRanking.style.display === "block";
+    modalRanking.style.display = visivel ? "none" : "block";
+    if (!visivel) abrirRanking();
+    });
+
+    btnFecharRanking.addEventListener("click", () => {
+        modalRanking.style.display = "none";
+    });
+
     document.querySelector("#btn-loja").addEventListener("click", () => {
         modalLoja.style.display = lojaAberta ? "none" : "block";
         if (!lojaAberta) abrirLoja();
@@ -392,7 +609,35 @@ async function iniciar() {
         inventarioAberto = false;
     });
 
-    // Cliques do Jogo
+    document.querySelector("#btn-guia").addEventListener("click", () => {
+        modalGuia.style.display = modalGuia.style.display === "block" ? "none" : "block";
+    });
+
+    document.querySelector("#btn-fechar-guia").addEventListener("click", () => {
+        modalGuia.style.display = "none";
+    });
+
+    //lógica do nome do Jogador
+    document.querySelector("#btn-salvar-nome").addEventListener("click", async () => {
+        const nome = document.querySelector("#input-nome").value.trim();
+        if (!nome) return;
+    
+        const resposta = await fetch("/nome/" + jogadorId, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nome: nome })
+        });
+        const dados = await resposta.json();
+        if (dados.erro) {
+            alert(dados.erro);
+        } else {
+            document.querySelector("#modal-nome").style.display = "none";
+        }
+    });
+
+    verificarNome(id);
+
+    // --- Cliques do jogo ---
     gato.addEventListener("click", async () => {
         if (bloqueado) return;
         tocarSom();
@@ -405,7 +650,7 @@ async function iniciar() {
         atualizarTela(await res.json());
     });
 
-    // Carga Inicial
+    // --- Carga inicial ---
     const resEst = await fetch("/estado/" + id);
     const dadosEst = await resEst.json();
     if (dadosEst.erro) {
@@ -419,46 +664,38 @@ async function iniciar() {
     const resInv = await fetch("/inventario/" + id);
     atualizarEfeitos(await resInv.json());
 
-
-    // --- INÍCIO DO PULSO ÚNICO ---
+    // --- Pulso principal ---
     setInterval(async () => {
-    if (processandoPulso || !jogadorId) return;
-    processandoPulso = true;
+        if (processandoPulso || !jogadorId) return;
+        processandoPulso = true;
+        try {
+            const resPassivo = await fetch("/passivo/" + jogadorId, { method: "POST" });
+            const dadosPassivo = await resPassivo.json();
+            if (dadosPassivo.erro) {
+                localStorage.clear();
+                location.reload();
+                return;
+            }
+            atualizarTela(dadosPassivo);
 
-    try {
-        // 1. Ganho Passivo
-        const resPassivo = await fetch("/passivo/" + jogadorId, { method: "POST" });
-        const dadosPassivo = await resPassivo.json();
-        if (dadosPassivo.erro) {
-            localStorage.clear();
-            location.reload();
-            return;
+            segundosLoja -= 1;
+            const timerDisplay = document.querySelector("#timer-loja");
+            if (timerDisplay) {
+                const min = Math.floor(segundosLoja / 60);
+                const seg = segundosLoja % 60;
+                timerDisplay.textContent = `Próximo sorteio: ${min}:${seg < 10 ? "0" : ""}${seg}`;
+            }
+
+            if (segundosLoja <= 0) await abrirLoja();
+
+            atualizarContadoresVisuais();
+
+        } catch (e) {
+            console.error("Pulso falhou:", e);
+        } finally {
+            processandoPulso = false;
         }
-        atualizarTela(dadosPassivo);
-
-        // 2. Timer da Loja
-        segundosLoja -= 1;
-        const timerDisplay = document.querySelector("#timer-loja");
-        if (timerDisplay) {
-            const min = Math.floor(segundosLoja / 60);
-            const seg = segundosLoja % 60;
-            timerDisplay.textContent = `Próximo sorteio: ${min}:${seg < 10 ? "0" : ""}${seg}`;
-        }
-
-        if (segundosLoja <= 0) {
-            await abrirLoja();
-        }
-
-        // 3. Contadores Visuais
-        atualizarContadoresVisuais();
-
-    } catch (e) {
-        console.error("Pulso falhou:", e);
-    } finally {
-        processandoPulso = false;
-    }
-}, 1000);
-
+    }, 1000);
 }
 
 iniciar();

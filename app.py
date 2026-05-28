@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, timezone
 import random
@@ -25,6 +25,7 @@ class Jogador(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     moedas = db.Column(db.Integer, default=0)
     pelos = db.Column(db.Integer, default=0)
+    nome = db.Column(db.String, nullable=True)
     
 class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -374,6 +375,49 @@ def passivo(id):
     jogador.pelos += pelos_passivos
     db.session.commit()
     return jsonify({"moedas": jogador.moedas, "pelos": jogador.pelos})
+
+
+@app.route("/nome/<int:jogador_id>", methods=["POST"])
+def salvar_nome(jogador_id):
+    jogador = db.session.get(Jogador, jogador_id)
+    if not jogador:
+        return jsonify({"erro": "jogador não encontrado"}), 404
+    
+    dados = request.get_json()
+    nome = dados.get("nome", "").strip()
+    
+    if not nome:
+        return jsonify({"erro": "nome inválido"}), 400
+    
+    if len(nome) > 20:
+        return jsonify({"erro": "nome muito longo"}), 400
+    
+    jogador.nome = nome
+    db.session.commit()
+    return jsonify({"nome": jogador.nome})
+
+@app.route("/ranking", methods=["GET"])
+def ranking():
+    jogadores = Jogador.query.filter(
+        Jogador.nome != None
+    ).order_by(Jogador.moedas.desc()).limit(10).all()
+    
+    resultado = []
+    for i, jogador in enumerate(jogadores):
+        resultado.append({
+            "posicao": i + 1,
+            "nome": jogador.nome,
+            "moedas": jogador.moedas
+        })
+    
+    return jsonify(resultado)
+
+@app.route("/nome/<int:jogador_id>", methods=["GET"])
+def get_nome(jogador_id):
+    jogador = db.session.get(Jogador, jogador_id)
+    if not jogador:
+        return jsonify({"erro": "jogador não encontrado"}), 404
+    return jsonify({"nome": jogador.nome})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080, debug=True)
