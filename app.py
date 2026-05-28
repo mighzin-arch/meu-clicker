@@ -5,7 +5,7 @@ import random
 import logging
 import os
 
-
+os.environ['TZ'] = 'UTC'
 ultimo_sorteio = None
 app = Flask(__name__)
 log = logging.getLogger('werkzeug')
