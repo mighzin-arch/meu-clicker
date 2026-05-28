@@ -309,7 +309,7 @@ def ativar(jogador_id, inventario_id):
         "moedas": jogador.moedas,
         "pelos": jogador.pelos,
         "efeito": item.efeito,
-        "expira_em": entrada.expira_em.isoformat()
+        "expira_em": entrada.expira_em.isoformat() + "Z"
     })
 
 @app.route("/inventario/<int:jogador_id>", methods=["GET"])
@@ -330,7 +330,7 @@ def inventario(jogador_id):
             "nome": item.nome,
             "efeito": item.efeito,
             "equipado": ativo,
-            "expira_em": entrada.expira_em.isoformat() if entrada.expira_em else None
+            "expira_em": entrada.expira_em.isoformat() + "Z" if entrada.expira_em else None
         })
     return jsonify(resultado)
 
